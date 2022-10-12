@@ -1,14 +1,30 @@
 
 pipeline {
     agent any
+    environment{
+        DOCKERHUB_CREDENTIALS=credentials('dockerhub')
+    }
     stages {
-        stage('deploy') {
+        stage('Build') {
             steps {
-              sh "aws configure set region $AWS_DEFAULT_REGION" 
-              sh "aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID"  
-              sh "aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY"
-              sh "aws s3 cp index.html s3://mahesh-bucket24"
+                sh 'docker build -t Mahi7001/devops:${GIT_COMMIT} '
+              
             }
+        }
+        stage ('Login') {
+            steps {
+                sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+            }
+        }
+        stage('Push') {
+            steps {
+                sh 'docker push Mahi7001/devops:${GIT_COMMIT} '
+            }
+        }
+    }
+    post {
+        always {
+            sh 'docker logout'
         }
     }
 }
